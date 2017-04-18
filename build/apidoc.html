@@ -1,0 +1,299 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/mafintosh/chromecasts"
+
+    >chromecasts (v1.9.0)</a>
+</h1>
+<h4>Query your local network for Chromecasts and have them play media</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.chromecasts">module chromecasts</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.chromecasts.chromecasts">
+            function <span class="apidocSignatureSpan"></span>chromecasts
+            <span class="apidocSignatureSpan">()</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.chromecasts.toString">
+            function <span class="apidocSignatureSpan">chromecasts.</span>toString
+            <span class="apidocSignatureSpan">()</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.chromecasts" id="apidoc.module.chromecasts">module chromecasts</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.chromecasts.chromecasts" id="apidoc.element.chromecasts.chromecasts">
+        function <span class="apidocSignatureSpan"></span>chromecasts
+        <span class="apidocSignatureSpan">()</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">chromecasts = function () {
+  var dns = mdns()
+  var that = new events.EventEmitter()
+  var casts = {}
+  var ssdp = SSDP ? new SSDP({logLevel: process.env.DEBUG ? &#x27;trace&#x27; : false}) : null
+
+  that.players = []
+
+  var emit = function (cst) {
+    if (!cst || !cst.host || cst.emitted) return
+    cst.emitted = true
+
+    var player = new events.EventEmitter()
+
+    var connect = thunky(function reconnect (cb) {
+      var client = new castv2.Client()
+
+      client.on(&#x27;error&#x27;, function (err) {
+        player.emit(&#x27;error&#x27;, err)
+      })
+
+      client.on(&#x27;close&#x27;, function () {
+        connect = thunky(reconnect)
+      })
+
+      client.client.on(&#x27;close&#x27;, function () {
+        connect = thunky(reconnect)
+      })
+
+      client.connect(player.host, function (err) {
+        if (err) return cb(err)
+        player.emit(&#x27;connect&#x27;)
+
+        client.getSessions(function (err, sess) {
+          if (err) return cb(err)
+
+          var session = sess[0]
+          if (session &#x26;&#x26; session.appId === castv2.DefaultMediaReceiver.APP_ID) {
+            client.join(session, castv2.DefaultMediaReceiver, ready)
+          } else {
+            client.launch(castv2.DefaultMediaReceiver, ready)
+          }
+        })
+
+        function ready (err, p) {
+          if (err) return cb(err)
+
+          player.emit(&#x27;ready&#x27;)
+
+          p.on(&#x27;close&#x27;, function () {
+            connect = thunky(reconnect)
+          })
+
+          p.on(&#x27;status&#x27;, function (status) {
+            player.emit(&#x27;status&#x27;, status)
+          })
+
+          cb(null, p)
+        }
+      })
+    })
+
+    var connectClient = thunky(function reconnectClient (cb) {
+      var client = new castv2.Client()
+
+      client.on(&#x27;error&#x27;, function () {
+        connectClient = thunky(reconnectClient)
+      })
+
+      client.on(&#x27;close&#x27;, function () {
+        connectClient = thunky(reconnectClient)
+      })
+
+      client.connect(player.host, function (err) {
+        if (err) return cb(err)
+        cb(null, client)
+      })
+    })
+
+    player.name = cst.name
+    player.host = cst.host
+
+    player.client = function (cb) {
+      connectClient(cb)
+    }
+
+    player.chromecastStatus = function (cb) {
+      connectClient(function (err, client) {
+        if (err) return cb(err)
+        client.getStatus(cb)
+      })
+    }
+
+    player.play = function (url, opts, cb) {
+      if (typeof opts === &#x27;function&#x27;) return player.play(url, null, opts)
+      if (!opts) opts = {}
+      if (!url) return player.resume(cb)
+      if (!cb) cb = noop
+      connect(function (err, p) {
+        if (err) return cb(err)
+
+        var media = {
+          contentId: url,
+          contentType: opts.type || mime.lookup(url, &#x27;video/mp4&#x27;),
+          streamType: opts.streamType || &#x27;BUFFERED&#x27;,
+          tracks: [].concat(opts.subtitles || []).map(toSubtitles),
+          textTrackStyle: opts.textTrackStyle,
+          metadata: opts.metadata || {
+            type: 0,
+            metadataType: 0,
+            title: opts.title || &#x27;&#x27;,
+            images: [].concat(opts.images || []).map(toMap)
+          }
+        }
+
+        var autoSubtitles = opts.autoSubtitles
+        if (autoSubtitles === false) autoSubtitles = 0
+        if (autoSubtitles === true) autoSubtitles = 1
+
+        var playerOptions = {
+          autoplay: opts.autoPlay !== false,
+          currentTime: opts.seek,
+          activeTrackIds: opts.subtitles &#x26;&#x26; (autoSubtitles === 0 ? [] : [autoSubtitles || 1])
+        }
+
+        p.load(media, playerOptions, cb)
+      })
+    }
+
+    player.resume = function (cb) {
+      if (!cb) cb = noop
+      connect(function (err, p) {
+        if (err) return cb(err)
+        p.play()
+      })
+    }
+
+    player.pause = function (cb) {
+      if (!cb) cb = noop
+      connect(function (err, p) {
+        if (err) return cb(err)
+        p.pause(cb)
+      })
+    }
+
+    player.stop = function (cb) {
+      if (!cb) cb = noop
+      connect(function (err, p) {
+        if (err) return cb(err)
+        p.stop(cb)
+      })
+    }
+
+    player.status = function (cb) {
+      connect(function (err, p) {
+        if (err) return cb(err)
+        p.getStatus(cb)
+      })
+    }
+
+    player.subtitles = function (i ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.chromecasts.toString" id="apidoc.element.chromecasts.toString">
+        function <span class="apidocSignatureSpan">chromecasts.</span>toString
+        <span class="apidocSignatureSpan">()</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">toString = function () {
+    return text;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+
+  if (ssdp) {
+    ssdp.on(&#x27;response&#x27;, function (headers, statusCode, info) {
+      if (!headers.LOCATION) return
+
+      get.concat(headers.LOCATION, function (err, res, body) {
+        if (err) return
+        parseString(body.<span class="apidocCodeKeywordSpan">toString</span>(), {explicitArray: false, explicitRoot: false},
+          function (err, service) {
+if (err) return
+if (!service.device) return
+if (service.device.manufacturer !== &#x27;Google Inc.&#x27;) return
+
+debug(&#x27;device %j&#x27;, service.device)
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
