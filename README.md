@@ -1,6 +1,6 @@
 # npmdoc-chromecasts
 
-#### api documentation for  [chromecasts (v1.9.0)](https://github.com/mafintosh/chromecasts)  [![npm package](https://img.shields.io/npm/v/npmdoc-chromecasts.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-chromecasts) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-chromecasts.svg)](https://travis-ci.org/npmdoc/node-npmdoc-chromecasts)
+#### basic api documentation for  [chromecasts (v1.9.0)](https://github.com/mafintosh/chromecasts)  [![npm package](https://img.shields.io/npm/v/npmdoc-chromecasts.svg?style=flat-square)](https://www.npmjs.org/package/npmdoc-chromecasts) [![travis-ci.org build-status](https://api.travis-ci.org/npmdoc/node-npmdoc-chromecasts.svg)](https://travis-ci.org/npmdoc/node-npmdoc-chromecasts)
 
 #### Query your local network for Chromecasts and have them play media
 
@@ -76,7 +76,8 @@
     "scripts": {
         "test": "standard"
     },
-    "version": "1.9.0"
+    "version": "1.9.0",
+    "bin": {}
 }
 ```
 
