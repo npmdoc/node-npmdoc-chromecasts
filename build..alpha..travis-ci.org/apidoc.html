@@ -70,15 +70,6 @@
 
         </li>
 
-        <li>
-
-            <a class="apidocElementLiA" href="#apidoc.element.chromecasts.toString">
-            function <span class="apidocSignatureSpan">chromecasts.</span>toString
-            <span class="apidocSignatureSpan">()</span>
-            </a>
-
-        </li>
-
     </ol></li>
 
 </ol></div>
@@ -256,36 +247,6 @@
 
     player.subtitles = function (i ...</pre></li>
     <li>example usage<pre class="apidocCodePre">n/a</pre></li>
-    </ul>
-
-
-
-    <h2>
-        <a href="#apidoc.element.chromecasts.toString" id="apidoc.element.chromecasts.toString">
-        function <span class="apidocSignatureSpan">chromecasts.</span>toString
-        <span class="apidocSignatureSpan">()</span>
-        </a>
-    </h2>
-    <ul>
-    <li>description and source-code<pre class="apidocCodePre">toString = function () {
-    return text;
-}</pre></li>
-    <li>example usage<pre class="apidocCodePre">...
-
-  if (ssdp) {
-    ssdp.on(&#x27;response&#x27;, function (headers, statusCode, info) {
-      if (!headers.LOCATION) return
-
-      get.concat(headers.LOCATION, function (err, res, body) {
-        if (err) return
-        parseString(body.<span class="apidocCodeKeywordSpan">toString</span>(), {explicitArray: false, explicitRoot: false},
-          function (err, service) {
-if (err) return
-if (!service.device) return
-if (service.device.manufacturer !== &#x27;Google Inc.&#x27;) return
-
-debug(&#x27;device %j&#x27;, service.device)
-...</pre></li>
     </ul>
 
 
